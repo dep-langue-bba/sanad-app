@@ -1,0 +1,312 @@
+/* ==========================================================================
+   منصة سَنَد - النظام البصري العام (Sanad Design System)
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* ألوان الهوية */
+  --primary-emerald: #0f5132;
+  --primary-emerald-light: #10b981;
+  --accent-gold: #d4af37;
+  --accent-gold-hover: #b89528;
+  --bg-cream: #f8faf9;
+  --text-charcoal: #0f172a;
+  --text-muted: #64748b;
+  
+  /* ألوان حالات البلاغات */
+  --status-danger: #ef4444;
+  --status-warning: #f59e0b;
+  --status-success: #10b981;
+
+  /* التأثيرات الزجاجية */
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 20px 40px -15px rgba(15, 81, 50, 0.07), 0 0 15px rgba(0, 0, 0, 0.03);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ==========================================================================
+   إعدادات الخلفية والدوائر المتوهجة (Ambient Glow Effects)
+   ========================================================================== */
+body {
+  background: #0d1b1a; /* خلفية داكنة فاخرة تبرز التوهج */
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(15, 81, 50, 0.4) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(212, 175, 55, 0.15) 0px, transparent 50%);
+  color: var(--text-charcoal);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 15px;
+  direction: rtl;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* عناصر الدوائر المتوهجة */
+.bg-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+  pointer-events: none;
+  animation: floatOrb 10s ease-in-out infinite alternate;
+}
+
+/* الدائرة الزمردية الأولى (أعلى اليسار) */
+.orb-1 {
+  width: 320px;
+  height: 320px;
+  background: rgba(16, 185, 129, 0.35);
+  top: -50px;
+  left: -50px;
+}
+
+/* الدائرة الذهبية الثانية (أسفل اليمين) */
+.orb-2 {
+  width: 380px;
+  height: 380px;
+  background: rgba(212, 175, 55, 0.25);
+  bottom: -80px;
+  right: -50px;
+  animation-delay: -4s;
+}
+
+/* الدائرة الخضراء الثالثة (منتصف المنتصف) */
+.orb-3 {
+  width: 250px;
+  height: 250px;
+  background: rgba(15, 81, 50, 0.5);
+  top: 40%;
+  left: 30%;
+  animation-delay: -7s;
+}
+
+/* حركة التموج الخفيفة للدوائر */
+@keyframes floatOrb {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    transform: translate(30px, -40px) scale(1.1);
+  }
+}
+
+/* ضبط شريط الزجاج ليتفاعل مع الخلفية الجديدة */
+.container {
+  position: relative;
+  z-index: 1; /* يضمن ظهور البطاقة فوق الدوائر */
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+body {
+  background: linear-gradient(135deg, #f8faf9 0%, #e2e8f0 100%);
+  color: var(--text-charcoal);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 15px;
+  direction: rtl;
+}
+
+/* ==========================================================================
+   الحاوية الرئيسية (Glassmorphism Container)
+   ========================================================================== */
+.container {
+  width: 100%;
+  max-width: 580px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  box-shadow: var(--glass-shadow);
+  padding: 35px 30px;
+  transition: transform 0.3s ease;
+}
+
+/* الهيدر والعنوان */
+.header {
+  text-align: center;
+  margin-bottom: 28px;
+  position: relative;
+}
+
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 81, 50, 0.08);
+  color: var(--primary-emerald);
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  border: 1px solid rgba(15, 81, 50, 0.15);
+}
+
+.brand-badge .dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--primary-emerald-light);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--primary-emerald-light);
+}
+
+.header h1 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--primary-emerald);
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+
+.header p {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   حقول الإدخال والنموذج
+   ========================================================================== */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-charcoal);
+  margin-bottom: 8px;
+}
+
+.input-field, .select-field, .textarea-field {
+  width: 100%;
+  padding: 13px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-charcoal);
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.25s ease;
+}
+
+.input-field:focus, .select-field:focus, .textarea-field:focus {
+  border-color: var(--primary-emerald-light);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+  background: #ffffff;
+}
+
+.textarea-field {
+  resize: vertical;
+  min-height: 110px;
+}
+
+/* شارة التشفير التفاعلية */
+.security-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  color: #856404;
+  margin-bottom: 22px;
+}
+
+.security-note svg {
+  flex-shrink: 0;
+  fill: var(--accent-gold);
+}
+
+/* ==========================================================================
+   الأزرار والتفاعلات
+   ========================================================================== */
+.btn-submit {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--primary-emerald) 0%, #145a32 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 20px -5px rgba(15, 81, 50, 0.3);
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -5px rgba(15, 81, 50, 0.4);
+}
+
+.btn-submit:active {
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   نافذة نجاح الإرسال (Success Card)
+   ========================================================================== */
+.success-card {
+  display: none;
+  text-align: center;
+  padding: 20px 10px;
+}
+
+.success-icon {
+  width: 65px;
+  height: 65px;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--primary-emerald-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+}
+
+.ticket-box {
+  background: #f1f5f9;
+  border: 1px dashed var(--accent-gold);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 18px 0;
+  font-family: monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary-emerald);
+}
+
+/* تجاوب الشاشات الصغيرة */
+@media (max-width: 480px) {
+  .container {
+    padding: 25px 20px;
+    border-radius: 20px;
+  }
+  .header h1 {
+    font-size: 1.5rem;
+  }
+}

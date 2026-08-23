@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<!-- Copyright (c) 2026 Department of Arabic Language & Literature - All Rights Reserved. -->
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الإدارة - منصة سَنَد</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+
+        #printHeader,
+        #printStats,
+        #receiptPrintArea {
+            display: none;
+        }
+
+        /* عمود التفاصيل يأخذ أكبر مساحة ويلتف تلقائياً */
+        .details-cell {
+            min-width: 240px;
+            max-width: 480px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.7;
+        }
+
+        @media print {
+            @page {
+                size: A4;
+                margin: 12mm;
+            }
+
+            body {
+                background: white !important;
+                color: black !important;
+                min-height: auto !important;
+            }
+
+            #printHeader {
+                display: block !important;
+            }
+
+            #printStats {
+                display: grid !important;
+            }
+
+            button,
+            input,
+            select,
+            textarea,
+            .no-print,
+            header,
+            nav {
+                display: none !important;
+            }
+
+            main {
+                max-width: 100% !important;
+                padding: 0 !important;
+            }
+
+            table {
+                width: 100% !important;
+                font-size: 10px !important;
+                border: 1px solid #0f172a !important;
+            }
+
+            th,
+            td {
+                border: 1px solid #cbd5e1 !important;
+                padding: 6px !important;
+                color: black !important;
+                white-space: normal !important;
+            }
+
+            thead {
+                background: #f1f5f9 !important;
+            }
+
+            .print-receipt-mode #dashboardSection,
+            .print-receipt-mode #loginSection {
+                display: none !important;
+            }
+
+            .print-receipt-mode #updateModal {
+                position: static !important;
+                display: block !important;
+                background: white !important;
+                box-shadow: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+            }
+
+            .print-receipt-mode #updateModal > div {
+                box-shadow: none !important;
+                border: 0 !important;
+                border-radius: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                padding: 0 !important;
+            }
+
+            .print-receipt-mode .modal-title,
+            .print-receipt-mode .modal-form-content,
+            .print-receipt-mode .modal-actions {
+                display: none !important;
+            }
+
+            .print-receipt-mode #receiptPrintArea {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+
+    <!-- ترويسة الطباعة الرسمية -->
+    <div id="printHeader" class="text-center mb-6 border-b-2 border-slate-800 pb-4">
+        <h3 class="text-lg font-bold">الجمهورية الجزائرية الديمقراطية الشعبية</h3>
+        <h3 class="text-md font-semibold">وزارة التعليم العالي والبحث العلمي</h3>
+        <h2 class="text-xl font-bold mt-2">جامعة محمد البشير الإبراهيمي - برج بوعريريج</h2>
+        <h3 class="text-lg font-bold text-slate-700">كلية الآداب واللغات</h3>
+        <h4 class="text-md font-bold text-emerald-800">قسم اللغة والأدب العربي</h4>
+        <p class="text-xs text-slate-500 mt-2">نظام "سَنَد" للإدارة البيداغوجية - تاريخ الاستخراج: <span id="printDate"></span></p>
+    </div>
+
+    <!-- شاشة تسجيل الدخول -->
+    <div id="loginSection" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200">
+            <div class="text-center mb-6">
+                <h1 class="text-3xl font-extrabold text-emerald-800 mb-2">سَنَد</h1>
+                <p class="text-slate-500 font-semibold text-sm">لوحة تحكم إدارة القسم البيداغوجي</p>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-slate-700 font-bold mb-2">البريد الإلكتروني</label>
+                    <input type="email" id="adminEmail" required 
+                           placeholder="admin@univ-bba.dz"
+                           class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                </div>
+                <div>
+                    <label class="block text-slate-700 font-bold mb-2">كلمة المرور</label>
+                    <input type="password" id="adminPassword" required 
+                           class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                </div>
+                <div id="loginError" class="text-red-600 text-sm hidden font-semibold text-center"></div>
+                <button type="submit" class="w-full bg-emerald-800 hover:bg-emerald-900 text-white font-bold py-3 rounded-xl transition shadow-md">
+                    تسجيل الدخول
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- لوحة التحكم -->
+    <div id="dashboardSection" class="hidden">
+        <header class="bg-emerald-900 text-white shadow-md">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold">لوحة إدارة البلاغات والطلبات - سَنَد</h1>
+                    <p class="text-emerald-200 text-xs mt-0.5">جامعة محمد البشير الإبراهيمي - قسم اللغة العربية وآدابها</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="adminEmailDisplay" class="text-emerald-200 text-sm hidden sm:inline"></span>
+                    <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white text-sm font-bold px-4 py-2 rounded-lg transition">
+                        تسجيل الخروج
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-6 py-8">
+            <!-- الفلاتر -->
+            <div class="no-print bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <label class="font-bold text-slate-700 whitespace-nowrap">تصفية حسب الحالة:</label>
+                    <select id="filterStatus" onchange="applyFilters()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:outline-none">
+                        <option value="ALL">الكل</option>
+                        <option value="PENDING">قيد المراجعة</option>
+                        <option value="RESOLVED">تمت المعالجة</option>
+                        <option value="REJECTED">مرفوض</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <input type="text" id="searchInput" oninput="applyFilters()" placeholder="بحث بالتصنيف أو المادة أو التفاصيل..." class="px-4 py-2 border border-slate-300 rounded-lg text-sm w-full sm:w-64 focus:outline-none">
+                    <button onclick="loadReports()" class="bg-slate-800 text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-slate-900 transition">تحديث</button>
+                    <button onclick="printFullReport()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold transition flex items-center gap-2">
+                        <span>🖨️ طباعة السجل العام</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- جدول البلاغات -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right border-collapse">
+                        <thead class="bg-slate-50 text-slate-700 font-bold text-sm border-b border-slate-200">
+                            <tr>
+                                <th class="p-3 whitespace-nowrap">التصنيف</th>
+                                <th class="p-3 whitespace-nowrap">التاريخ والوقت</th>
+                                <th class="p-3 whitespace-nowrap">المعلومات</th>
+                                <th class="p-3 whitespace-nowrap">المرفق</th>
+                                <th class="p-3">التفاصيل</th>
+                                <th class="p-3 text-center whitespace-nowrap">الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsTableBody" class="divide-y divide-slate-100 text-sm">
+                            <tr>
+                                <td colspan="6" class="p-8 text-center text-slate-400">جاري تحميل البيانات...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="printStats" class="grid-cols-3 gap-3 mt-6 text-center text-sm font-bold">
+                <div class="border border-slate-300 p-3">إجمالي الطلبات: <span id="printTotalCount">0</span></div>
+                <div class="border border-slate-300 p-3">المعالجة: <span id="printResolvedCount">0</span></div>
+                <div class="border border-slate-300 p-3">المرفوضة: <span id="printRejectedCount">0</span></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- النافذة المنبثقة -->
+    <div id="updateModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 max-h-[90vh] overflow-y-auto">
+            <h3 class="modal-title text-xl font-bold text-slate-800 mb-4">
+                دراسة الطلب:
+                <span id="modalTicketId" class="text-emerald-700 font-mono text-base"></span>
+            </h3>
+            
+            <div class="modal-form-content space-y-4">
+                <div>
+                    <label class="block text-slate-700 font-bold mb-1">حالة الطلب الجديدة</label>
+                    <select id="modalStatusSelect" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50">
+                        <option value="PENDING">قيد المراجعة 🟡</option>
+                        <option value="RESOLVED">تمت المعالجة 🟢</option>
+                        <option value="REJECTED">مرفوض 🔴</option>
+                    </select>
+                </div>
+
+                <!-- فك تشفير البريد فقط -->
+                <div class="border-t border-b border-slate-100 py-3 my-2">
+                    <label class="block text-slate-700 font-bold mb-1.5 text-xs">البريد المؤسساتي للطالب (مشفّر)</label>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="modalStudentEmail" readonly value="••••••••@univ-bba.dz" 
+                               class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-100 text-slate-500 font-mono focus:outline-none">
+                        <button type="button" onclick="fetchStudentIdentity()" 
+                                class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-lg whitespace-nowrap transition shadow-sm">
+                            🔓 فك التشفير
+                        </button>
+                    </div>
+                </div>
+
+                <!-- نص انشغال الطالب (ظاهر مباشرة) -->
+                <div>
+                    <label class="block text-slate-700 font-bold mb-1">نص انشغال الطالب</label>
+                    <div id="modalStudentDetails" class="w-full min-h-[90px] px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-800 leading-7 whitespace-pre-wrap">
+                        —
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-700 font-bold mb-1">ملاحظة وردّ الإدارة (سيشاهدها الطالب)</label>
+                    <textarea id="modalAdminNote" rows="4" 
+                              class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" 
+                              placeholder="أدخل رد الإدارة أو الخطوات المتخذة..."></textarea>
+                </div>
+            </div>
+
+            <!-- منطقة الوصل للطباعة -->
+            <div id="receiptPrintArea" class="text-slate-900">
+                <h2 class="text-xl font-extrabold text-center mb-5">وصل معالجة / تكفل بطلب</h2>
+
+                <div class="grid grid-cols-2 gap-3 text-sm mb-5">
+                    <div class="border border-slate-300 p-3">
+                        <strong>الرقم المرجعي:</strong>
+                        <div id="receiptTicketId" class="font-mono mt-1"></div>
+                    </div>
+                    <div class="border border-slate-300 p-3">
+                        <strong>تاريخ وموعد التقديم:</strong>
+                        <div id="receiptSubmittedAt" class="mt-1"></div>
+                    </div>
+                    <div class="border border-slate-300 p-3">
+                        <strong>المنسق/الطالب:</strong>
+                        <div id="receiptStudentEmail" class="font-mono mt-1"></div>
+                    </div>
+                    <div class="border border-slate-300 p-3">
+                        <strong>التصنيف:</strong>
+                        <div id="receiptCategory" class="mt-1"></div>
+                    </div>
+                    <div class="border border-slate-300 p-3">
+                        <strong>المادة:</strong>
+                        <div id="receiptModule" class="mt-1"></div>
+                    </div>
+                    <div class="border border-slate-300 p-3">
+                        <strong>القاعة:</strong>
+                        <div id="receiptRoom" class="mt-1"></div>
+                    </div>
+                </div>
+
+                <div class="border border-slate-300 p-4 text-sm mb-4">
+                    <strong>نص انشغال الطالب:</strong>
+                    <p id="receiptStudentDetails" class="mt-2 leading-8 whitespace-pre-wrap">—</p>
+                </div>
+
+                <div class="border border-slate-300 p-4 text-sm mb-4">
+                    <strong>قرار الإدارة والإجراء المتخذ:</strong>
+                    <p id="receiptAdminNote" class="mt-2 leading-8"></p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-sm mb-8">
+                    <div class="border border-slate-300 p-3">
+                        <strong>حالة الطلب:</strong>
+                        <div id="receiptStatus" class="mt-1"></div>
+                    </div>
+                    <div class="border border-slate-300 p-3">
+                        <strong>تاريخ ووقت المعالجة:</strong>
+                        <div id="receiptProcessedAt" class="mt-1"></div>
+                    </div>
+                </div>
+
+                <div class="border-2 border-slate-800 p-5 min-h-36 text-sm">
+                    <strong>إثبات قانوني:</strong>
+                    <div class="mt-10 flex justify-between">
+                        <span>توقيع رئيس القسم</span>
+                        <span>خاتم القسم</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions mt-6 flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-300">إلغاء</button>
+                <button type="button" onclick="printSingleReceipt()" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-sm font-bold transition flex items-center gap-1">
+                    <span>🖨️ طباعة وصل التكفل</span>
+                </button>
+                <button onclick="saveReportUpdate()" class="px-4 py-2 bg-emerald-800 text-white rounded-lg text-sm font-bold hover:bg-emerald-900 shadow">حفظ التغييرات</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBMemeddaOFP0nb2e2iityepsYH_yI03Vg",
+            authDomain: "sanad-60e30.firebaseapp.com",
+            projectId: "sanad-60e30",
+            storageBucket: "sanad-60e30.firebasestorage.app",
+            messagingSenderId: "116549034243",
+            appId: "1:116549034243:web:1eb318c5328d41f712c936",
+            measurementId: "G-PTPYXZ72WF"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        let allReports = [];
+        let currentFilteredReports = [];
+        let selectedTicketId = null;
+        let selectedReport = null;
+        let decryptedEmail = '';
+
+        const categoryTranslations = {
+            'DOC_REQUEST': '📜 استصدار وثيقة',
+            'ABSENCE': '⚠️ غياب أستاذ',
+            'EARLY_LEAVE': '⏱️ خروج مبكر',
+            'LATE': '⏳ تأخر أستاذ',
+            'GRIEVANCE': '📝 تظلم بيداغوجي',
+            'HARASSMENT': '🔒 بلاغ خاص'
+        };
+
+        const statusTranslations = {
+            'PENDING': 'قيد المراجعة',
+            'RESOLVED': 'تمت المعالجة',
+            'REJECTED': 'مرفوض'
+        };
+
+        function formatDateTime(value) {
+            return value ? new Date(value).toLocaleString('ar-DZ') : '—';
+        }
+
+        function setText(id, value) {
+            const element = document.getElementById(id);
+            if (element) element.textContent = (value === undefined || value === null || value === '') ? '—' : value;
+        }
+
+        function getStatusLabel(status) {
+            return statusTranslations[status] || status || 'قيد المراجعة';
+        }
+
+        function escapeHtml(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function updatePrintStats(reports = currentFilteredReports) {
+            setText('printTotalCount', reports.length);
+            setText('printResolvedCount', reports.filter(report => report.status === 'RESOLVED').length);
+            setText('printRejectedCount', reports.filter(report => report.status === 'REJECTED').length);
+        }
+
+        function populateReceipt() {
+            if (!selectedReport) return;
+
+            const status = document.getElementById('modalStatusSelect').value;
+            const adminNote = document.getElementById('modalAdminNote').value.trim();
+            const studentEmail = document.getElementById('modalStudentEmail').value.trim();
+
+            setText('receiptTicketId', selectedReport.ticket_id);
+            setText('receiptSubmittedAt', formatDateTime(selectedReport.timestamp));
+            setText('receiptStudentEmail', studentEmail.includes('••••') ? (decryptedEmail || '••••••••@univ-bba.dz') : studentEmail);
+            setText('receiptCategory', categoryTranslations[selectedReport.category] || selectedReport.category || 'عام');
+            setText('receiptModule', selectedReport.module_code || '—');
+            setText('receiptRoom', selectedReport.room || '—');
+            setText('receiptStudentDetails', selectedReport.details || '—');
+            setText('receiptAdminNote', adminNote || 'لم يتم تدوين إجراء إداري بعد.');
+            setText('receiptStatus', getStatusLabel(status));
+            setText('receiptProcessedAt', new Date().toLocaleString('ar-DZ'));
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('adminEmail').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.classList.add('hidden');
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (err) {
+                console.error(err);
+                let message = 'فشل تسجيل الدخول. تأكد من البريد وكلمة المرور.';
+                if (err.code === 'auth/user-not-found') message = 'البريد الإلكتروني غير مسجل.';
+                if (err.code === 'auth/wrong-password') message = 'كلمة المرور غير صحيحة.';
+                if (err.code === 'auth/invalid-email') message = 'صيغة البريد غير صحيحة.';
+                errorDiv.innerText = message;
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                const emailDisplay = document.getElementById('adminEmailDisplay');
+                emailDisplay.textContent = user.email;
+                emailDisplay.classList.remove('hidden');
+                loadReports();
+            } else {
+                document.getElementById('loginSection').classList.remove('hidden');
+                document.getElementById('dashboardSection').classList.add('hidden');
+            }
+        });
+
+        async function handleLogout() {
+            await auth.signOut();
+        }
+
+        async function getIdToken() {
+            const user = auth.currentUser;
+            if (!user) throw new Error('غير مسجل الدخول');
+            return await user.getIdToken(true);
+        }
+
+        async function loadReports() {
+            try {
+                const token = await getIdToken();
+                const response = await fetch('/api/admin/reports', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    await handleLogout();
+                    return;
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    allReports = data.reports || [];
+                    applyFilters();
+                } else {
+                    console.error(data.error);
+                }
+            } catch (err) {
+                console.error('Error loading reports:', err);
+            }
+        }
+
+        function applyFilters() {
+            const statusFilter = document.getElementById('filterStatus').value;
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+
+            const filtered = allReports.filter(report => {
+                const matchesStatus = statusFilter === 'ALL' || report.status === statusFilter;
+                const matchesSearch =
+                    (report.ticket_id || '').toLowerCase().includes(searchQuery) ||
+                    (report.module_code || '').toLowerCase().includes(searchQuery) ||
+                    (report.category || '').toLowerCase().includes(searchQuery) ||
+                    (report.details || '').toLowerCase().includes(searchQuery) ||
+                    (report.room || '').toLowerCase().includes(searchQuery);
+                return matchesStatus && matchesSearch;
+            });
+
+            currentFilteredReports = filtered;
+            updatePrintStats(filtered);
+            renderTable(filtered);
+        }
+
+        function renderTable(reports) {
+            const tbody = document.getElementById('reportsTableBody');
+
+            if (reports.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">لا توجد طلبات مطابقة.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = reports.map(r => {
+                let statusBadge = `<span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full text-xs font-bold">قيد المراجعة</span>`;
+                if (r.status === 'RESOLVED') {
+                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full text-xs font-bold">تمت المعالجة</span>`;
+                } else if (r.status === 'REJECTED') {
+                    statusBadge = `<span class="bg-rose-100 text-rose-800 px-2.5 py-1 rounded-full text-xs font-bold">مرفوض</span>`;
+                }
+
+                const translatedCategory = categoryTranslations[r.category] || r.category || 'عام';
+                const formattedDate = formatDateTime(r.timestamp);
+                const safeTicketId = encodeURIComponent(r.ticket_id || '');
+                const infoCell = `${escapeHtml(r.module_code || '—')} / ${escapeHtml(r.room || '—')}`;
+                const detailsText = escapeHtml((r.details || '').trim() || '—');
+
+                const attachmentCell = r.attachment_url
+                    ? `<a href="${r.attachment_url}" target="_blank" class="text-blue-600 hover:underline text-xs font-bold no-print">📎 مرفق</a><span class="hidden print:inline">مرفق</span>`
+                    : `<span class="text-slate-400 text-xs">بدون</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-50 border-b border-slate-100 align-top">
+                        <td class="p-3 font-semibold whitespace-nowrap">${translatedCategory}</td>
+                        <td class="p-3 text-slate-500 text-xs whitespace-nowrap">${formattedDate}</td>
+                        <td class="p-3 text-sm whitespace-nowrap">${infoCell}</td>
+                        <td class="p-3">${attachmentCell}</td>
+                        <td class="p-3 text-sm text-slate-700 details-cell">${detailsText}</td>
+                        <td class="p-3 text-center">
+                            <div class="flex flex-col items-center gap-2">
+                                ${statusBadge}
+                                <button onclick="openModal(decodeURIComponent('${safeTicketId}'))"
+                                        class="no-print text-emerald-800 hover:text-emerald-950 text-xs font-bold underline underline-offset-2">
+                                    دراسة الطلب
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openModal(ticketId) {
+            selectedTicketId = ticketId;
+            selectedReport = allReports.find(report => report.ticket_id === ticketId) || null;
+            decryptedEmail = '';
+
+            document.getElementById('modalTicketId').innerText = ticketId;
+            document.getElementById('modalStatusSelect').value = selectedReport?.status || 'PENDING';
+            document.getElementById('modalAdminNote').value = selectedReport?.admin_note || '';
+
+            const emailInput = document.getElementById('modalStudentEmail');
+            emailInput.value = '••••••••@univ-bba.dz';
+            emailInput.className = "w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-100 text-slate-500 font-mono focus:outline-none";
+
+            // التفاصيل ظاهرة مباشرة (غير مشفرة)
+            const detailsBox = document.getElementById('modalStudentDetails');
+            detailsBox.textContent = (selectedReport?.details || '').trim() || 'لا يوجد نص انشغال مسجل.';
+            detailsBox.className = "w-full min-h-[90px] px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-800 leading-7 whitespace-pre-wrap";
+
+            populateReceipt();
+            document.getElementById('updateModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('updateModal').classList.add('hidden');
+            selectedTicketId = null;
+            selectedReport = null;
+            decryptedEmail = '';
+        }
+
+        // فك تشفير البريد فقط
+        async function fetchStudentIdentity() {
+            const emailInput = document.getElementById('modalStudentEmail');
+            emailInput.value = 'جاري فك التشفير...';
+            emailInput.className = "w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-100 text-slate-500 font-mono focus:outline-none";
+
+            try {
+                const token = await getIdToken();
+                const response = await fetch(`/api/admin/reports/${selectedTicketId}/decrypt`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const email = data.email || data.data?.email || null;
+                    decryptedEmail = email || '';
+
+                    if (email) {
+                        emailInput.value = email;
+                        emailInput.className = "w-full px-3 py-2 border border-emerald-300 rounded-lg text-sm bg-emerald-50 text-emerald-900 font-mono font-bold focus:outline-none";
+                    } else {
+                        emailInput.value = 'لا توجد بيانات بريد';
+                        emailInput.className = "w-full px-3 py-2 border border-red-200 rounded-lg text-sm bg-red-50 text-red-700 font-mono focus:outline-none";
+                    }
+
+                    populateReceipt();
+                } else {
+                    emailInput.value = 'تعذر فك التشفير';
+                    emailInput.className = "w-full px-3 py-2 border border-red-200 rounded-lg text-sm bg-red-50 text-red-700 font-mono focus:outline-none";
+                    alert(data.error || 'فشل فك التشفير');
+                }
+            } catch (err) {
+                console.error('Error decrypting identity:', err);
+                emailInput.value = 'خطأ بالاتصال';
+                emailInput.className = "w-full px-3 py-2 border border-red-200 rounded-lg text-sm bg-red-50 text-red-700 font-mono focus:outline-none";
+            }
+        }
+
+        function printFullReport() {
+            document.body.classList.remove('print-receipt-mode');
+            setText('printDate', new Date().toLocaleString('ar-DZ'));
+            updatePrintStats();
+            window.print();
+        }
+
+        function printSingleReceipt() {
+            if (!selectedTicketId) return;
+
+            setText('printDate', new Date().toLocaleString('ar-DZ'));
+            populateReceipt();
+            document.body.classList.add('print-receipt-mode');
+
+            const cleanupReceiptPrint = () => {
+                document.body.classList.remove('print-receipt-mode');
+                window.removeEventListener('afterprint', cleanupReceiptPrint);
+            };
+
+            window.addEventListener('afterprint', cleanupReceiptPrint);
+            window.print();
+        }
+
+        async function saveReportUpdate() {
+            const status = document.getElementById('modalStatusSelect').value;
+            const admin_note = document.getElementById('modalAdminNote').value;
+
+            try {
+                const token = await getIdToken();
+                const response = await fetch(`/api/admin/reports/${selectedTicketId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ status, admin_note })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    closeModal();
+                    loadReports();
+                } else {
+                    alert(data.error || 'حدث خطأ أثناء الحفظ');
+                }
+            } catch (err) {
+                console.error('Error updating report:', err);
+                alert('حدث خطأ أثناء الاتصال بالخادم');
+            }
+        }
+    </script>
+</body>
+</html>

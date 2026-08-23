@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<!-- Copyright (c) 2026 Department of Arabic Language & Literature - All Rights Reserved. -->
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منصة سَنَد - واجهة الطالب</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: #FDFBF7;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: url('/assets/bg-pattern.svg');
+      background-repeat: repeat;
+      background-size: 280px;
+      opacity: 0.20;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .bg-primary-navy { background-color: #1E3A8A; }
+    .text-primary-navy { color: #1E3A8A; }
+    .bg-accent-gold { background-color: #C5A059; }
+    .text-accent-gold { color: #C5A059; }
+    .border-gold { border-color: #C5A059; }
+
+    #depositModal {
+      display: none;
+    }
+
+    #depositModal.is-open {
+      display: flex;
+    }
+
+    .print-only {
+      display: none;
+    }
+
+    @media print {
+      @page {
+        size: A4;
+        margin: 14mm;
+      }
+
+      body {
+        background: white !important;
+        color: black !important;
+      }
+
+      body.print-receipt-mode > :not(#depositModal) {
+        display: none !important;
+      }
+
+      body.print-receipt-mode #depositModal {
+        position: static !important;
+        display: block !important;
+        background: white !important;
+        padding: 0 !important;
+      }
+
+      body.print-receipt-mode #depositModalShell {
+        width: 100% !important;
+        max-width: 100% !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+      }
+
+      body.print-receipt-mode .screen-only {
+        display: none !important;
+      }
+
+      body.print-receipt-mode .print-only {
+        display: block !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between">
+
+  <div>
+    <header class="bg-primary-navy text-white border-b-4 border-gold shadow-lg">
+      <div class="bg-slate-900/40 py-1.5 px-4 text-center border-b border-white/10">
+        <p class="text-xs font-bold text-amber-200 tracking-wide">الجمهورية الجزائرية الديمقراطية الشعبية - وزارة التعليم العالي والبحث العلمي</p>
+      </div>
+
+      <!-- الهيدر الرئيسي: الشعار والعنونة الضخمة -->
+      <div class="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+          
+          <!-- الجانب الأيمن: شعار سَنَد الذهبي مع الكلمة بحجم ضخم -->
+          <div class="flex items-center gap-4 text-center md:text-right">
+            <div class="relative flex items-center justify-center">
+              <img src="assets/logo.png" alt="شعار منصة سند" class="h-20 w-auto object-contain filter drop-shadow-md" />
+            </div>
+            <div>
+              <div class="flex items-baseline gap-2">
+                <h1 class="text-4xl sm:text-5xl font-black text-amber-100 tracking-tight"> سَنَـــد </h1>
+              </div>
+              <p class="mt-1 text-sm font-semibold text-slate-200">بوابة الطالب للإيداع المباشر والمتابعة الآمنة للانشغالات البيداغوجية</p>
+            </div>
+          </div>
+
+          <!-- الجانب الأيسر: بيانات الجامعة والقسم -->
+          <div class="text-center md:text-left border-t md:border-t-0 md:border-r border-white/10 pt-3 md:pt-0 md:pr-6">
+            <h2 class="text-base font-bold text-white">جامعة محمد البشير الإبراهيمي - برج بوعريريج</h2>
+            <p class="text-xs text-amber-200/90 font-semibold mt-0.5">كلية الآداب واللغات</p>
+            <p class="text-xs text-slate-300 mt-0.5">قسم اللغة والأدب العربي</p>
+          </div>
+
+        </div>
+      </div>
+    </header>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <div id="responseBox" class="mb-6"></div>
+
+      <div class="grid gap-8 lg:grid-cols-[1.35fr_0.9fr]">
+        
+        <!-- قسم تقديم الطلب -->
+        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="border-b border-slate-200 pb-4 mb-5">
+            <h2 class="text-2xl font-black text-slate-900 flex items-center gap-2">
+              <span class="w-2 h-6 bg-accent-gold rounded-full inline-block"></span>
+              تقديم انشغال بيداغوجي جديد
+            </h2>
+            <p class="mt-1 text-xs sm:text-sm text-slate-500">املأ البيانات الأساسية. البريد المؤسساتي يُشفَّر قبل الإرسال، وبقية الحقول تُرسل بشكل واضح للإدارة.</p>
+          </div>
+
+          <form id="reportForm" enctype="multipart/form-data" class="space-y-4">
+            <div class="rounded-lg border border-emerald-200 bg-emerald-50/70 p-3 text-xs sm:text-sm font-semibold text-emerald-900 flex items-center gap-2">
+              <span class="text-lg">🔒</span>
+              <span>البريد المؤسساتي مشفر تلقائيًّا ولا يظهر إلا للجهة المخولة.</span>
+            </div>
+
+            <div>
+              <label for="category" class="mb-1 block text-sm font-bold text-slate-700">نوع الطلب أو البلاغ</label>
+              <select id="category" name="category" required class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-800 focus:ring-2 focus:ring-blue-100 transition">
+                <option value="">اختر التصنيف...</option>
+                <option value="DOC_REQUEST">استصدار وثيقة إدارية / بيداغوجية</option>
+                <option value="ABSENCE">غياب أستاذ / عدم حضور</option>
+                <option value="EARLY_LEAVE">خروج مبكر قبل انقضاء الوقت</option>
+                <option value="LATE">تأخر الأستاذ عن الحصة</option>
+                <option value="GRIEVANCE">تظلم بيداغوجي / إجحاف في نقطة</option>
+                <option value="HARASSMENT">بلاغ خاص أو تجاوز غير بيداغوجي</option>
+              </select>
+            </div>
+
+            <div id="subCategoryGroup" class="hidden">
+              <label for="sub_category" class="mb-1 block text-sm font-bold text-slate-700">حدد نوع الوثيقة المطلوبة</label>
+              <select id="sub_category" name="sub_category" class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-800 focus:ring-2 focus:ring-blue-100 transition">
+                <option value="">اختر الوثيقة...</option>
+                <option value="SCHOOL_CERT">شهادة مدرسية / إعادة التسجيل</option>
+                <option value="TRANSCRIPT">كشف النقاط</option>
+                <option value="ABSENCE_JUSTIFY">تبرير غياب عن حصة/امتحان</option>
+                <option value="STUDENT_CARD">طلب بطاقة طالب (بديل ضائع)</option>
+              </select>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label for="module_code" class="mb-1 block text-sm font-bold text-slate-700"> المقياس</label>
+                <input type="text" id="module_code" name="module_code" placeholder="مثال: المدارس اللسانية" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-800 focus:ring-2 focus:ring-blue-100 transition">
+              </div>
+              <div>
+                <label for="room" class="mb-1 block text-sm font-bold text-slate-700">القاعة / المدرج</label>
+                <input type="text" id="room" name="room" placeholder="مثال: القاعة 12" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-800 focus:ring-2 focus:ring-blue-100 transition">
+              </div>
+            </div>
+
+            <div>
+              <label for="details" class="mb-1 block text-sm font-bold text-slate-700">تفاصيل إضافية / شرح الطلب</label>
+              <textarea id="details" name="details" rows="4" placeholder="اكتب توضيحًا موجزًا للواقعة أو للطلب..." class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-800 focus:ring-2 focus:ring-blue-100 transition"></textarea>
+            </div>
+
+            <div>
+              <label for="attachment" class="mb-1 block text-sm font-bold text-slate-700">إرفاق وثيقة أو دليل (اختياري)</label>
+              <input type="file" id="attachment" name="attachment" accept="image/*,.pdf,.doc,.docx" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm file:ml-3 file:rounded-md file:border-0 file:bg-slate-800 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white">
+            </div>
+
+            <div>
+              <label for="student_email" class="mb-1 block text-sm font-bold text-slate-700">البريد المؤسساتي</label>
+              <input type="email" id="student_email" placeholder="student@univ-bba.dz" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-800 focus:ring-2 focus:ring-blue-100 transition">
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full rounded-lg bg-primary-navy px-4 py-3.5 text-sm font-black text-white shadow-md hover:bg-slate-900 transition disabled:cursor-not-allowed disabled:opacity-70">
+              إرسال الطلب
+            </button>
+          </form>
+        </section>
+
+        <!-- قسم متابعة التذكرة -->
+        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm h-fit">
+          <div class="border-b border-slate-200 pb-4 mb-5">
+            <h2 class="text-2xl font-black text-slate-900 flex items-center gap-2">
+              <span class="w-2 h-6 bg-accent-gold rounded-full inline-block"></span>
+              متابعة حالة تذكرة
+            </h2>
+            <p class="mt-1 text-xs sm:text-sm text-slate-500">أدخل الرقم المرجعي الذي حصلت عليه بعد الإيداع.</p>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label for="ticketSearchId" class="mb-1 block text-sm font-bold text-slate-700">رقم التذكرة</label>
+              <input type="text" id="ticketSearchId" placeholder="مثال: SANAD_1786890331863" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm outline-none focus:border-blue-800 focus:ring-2 focus:ring-blue-100 transition" dir="ltr">
+            </div>
+
+            <button id="btnCheckStatus" type="button" class="w-full rounded-lg bg-slate-800 px-4 py-3 text-sm font-extrabold text-white shadow transition hover:bg-slate-900">
+              استعلام عن الحالة
+            </button>
+
+            <div class="pt-2">
+              <label for="savedTicketsDropdown" class="mb-1 block text-sm font-bold text-slate-700">تذاكري السابقة</label>
+              <select id="savedTicketsDropdown" class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-800 focus:ring-2 focus:ring-blue-100 transition">
+                <option value="">لا توجد تذاكر محفوظة</option>
+              </select>
+            </div>
+
+            <div id="statusResultCard" class="hidden rounded-lg border p-4 transition-all">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-sm font-bold text-slate-700">حالة الطلب</span>
+                <span id="resStatusBadge" class="rounded-full px-3 py-1 text-xs font-extrabold">---</span>
+              </div>
+              <div class="mt-4 space-y-3 text-sm">
+                <p><strong>التصنيف:</strong> <span id="resCategory">---</span></p>
+                <div>
+                  <strong>رد وملاحظات الإدارة:</strong>
+                  <p id="resAdminNote" class="mt-2 rounded-md border border-slate-200 bg-white/80 p-3 leading-7 text-slate-700 shadow-sm"></p>
+                </div>
+                <p id="resTimestamp" class="text-left text-xs text-slate-500 font-mono" dir="ltr"></p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- النافذة المنبثقة: وصل الإيداع -->
+  <div id="depositModal" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+    <div id="depositModalShell" class="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
+      <div id="depositReceipt" class="text-slate-900">
+        
+        <!-- الترويسة للطباعة فقط -->
+        <div class="print-only mb-6 border-b-2 border-slate-800 pb-4 text-center">
+          <h3 class="text-lg font-bold">الجمهورية الجزائرية الديمقراطية الشعبية</h3>
+          <h3 class="text-md font-semibold">وزارة التعليم العالي والبحث العلمي</h3>
+          <h2 class="mt-2 text-xl font-bold">جامعة محمد البشير الإبراهيمي - برج بوعريريج</h2>
+          <h3 class="text-lg font-bold text-slate-700">كلية الآداب واللغات</h3>
+          <h4 class="text-md font-bold text-blue-900">قسم اللغة والأدب العربي</h4>
+        </div>
+
+        <!-- رأس الوصل للشاشة -->
+        <div class="screen-only mb-5 border-b border-slate-200 pb-4">
+          <h2 class="text-xl font-black text-primary-navy">وصل إيداع طلب</h2>
+          <p class="mt-1 text-xs text-slate-500">تم تسجيل طلبك بنجاح. احتفظ بهذا الرقم لمتابعة المعالجة.</p>
+        </div>
+
+        <div class="print-only mb-5 text-center">
+          <h2 class="text-xl font-extrabold">وصل إيداع طلب</h2>
+          <p class="mt-1 text-sm text-slate-600">منصة سَنَد للإدارة البيداغوجية</p>
+        </div>
+
+        <div class="grid gap-3 text-sm sm:grid-cols-2">
+          <div class="rounded-md border border-slate-300 p-3 bg-slate-50">
+            <strong class="text-xs text-slate-500 block mb-1">الرقم المرجعي للتذكرة:</strong>
+            <p id="receiptTicketId" class="break-all font-mono text-base font-extrabold text-primary-navy" dir="ltr"></p>
+          </div>
+          <div class="rounded-md border border-slate-300 p-3 bg-slate-50">
+            <strong class="text-xs text-slate-500 block mb-1">تاريخ الإيداع:</strong>
+            <p id="receiptDate" class="text-slate-800 font-semibold"></p>
+          </div>
+          <div class="rounded-md border border-slate-300 p-3 sm:col-span-2 bg-slate-50">
+            <strong class="text-xs text-slate-500 block mb-1">طبيعة الطلب:</strong>
+            <p id="receiptCategory" class="text-slate-800 font-semibold"></p>
+          </div>
+          <div class="rounded-md border border-slate-300 p-3 sm:col-span-2 bg-slate-50">
+            <strong class="text-xs text-slate-500 block mb-1">حالة الطلب عند الإيداع:</strong>
+            <p class="font-bold text-amber-700">قيد الدراسة والمراجعة</p>
+          </div>
+        </div>
+
+        <p class="mt-5 rounded-md bg-blue-50 border border-blue-100 p-3 text-xs sm:text-sm font-semibold leading-6 text-blue-900">
+          البريد المؤسساتي مشفر، ويستعمل هذا الوصل لإثبات الإيداع ومتابعة حالة التذكرة عبر المنصة.
+        </p>
+      </div>
+
+      <div class="screen-only mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button type="button" id="closeDepositModal" class="rounded-lg bg-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-300">إغلاق</button>
+        <button type="button" id="printDepositReceipt" class="rounded-lg bg-primary-navy px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-900">طباعة وصل الإيداع</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- المنطق البرمجي السليم والتفاعلي -->
+  <script type="module">
+    const API_BASE = '';
+
+    const categoryTranslations = {
+      DOC_REQUEST: 'استصدار وثيقة إدارية / بيداغوجية',
+      ABSENCE: 'غياب أستاذ / عدم حضور',
+      EARLY_LEAVE: 'خروج مبكر قبل انقضاء الوقت',
+      LATE: 'تأخر الأستاذ عن الحصة',
+      GRIEVANCE: 'تظلم بيداغوجي / إجحاف في نقطة',
+      HARASSMENT: 'بلاغ خاص أو تجاوز غير بيداغوجي'
+    };
+
+    const statusTranslations = {
+      PENDING: 'قيد المراجعة',
+      RESOLVED: 'تمت المعالجة',
+      REJECTED: 'مرفوض'
+    };
+
+    function arrayBufferToBase64(buffer) {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
+
+    function base64ToArrayBuffer(base64) {
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes.buffer;
+    }
+
+    let cachedPublicKey = null;
+
+    async function fetchAdminPublicKey() {
+      if (cachedPublicKey) return cachedPublicKey;
+
+      const res = await fetch(`${API_BASE}/api/public-key`);
+      if (!res.ok) throw new Error('تعذر جلب المفتاح العام من الخادم');
+
+      const data = await res.json();
+      if (!data.success || !data.publicKey) throw new Error('المفتاح العام غير صالح');
+
+      const keyBuffer = base64ToArrayBuffer(data.publicKey);
+      cachedPublicKey = await crypto.subtle.importKey(
+        'spki',
+        keyBuffer,
+        { name: 'RSA-OAEP', hash: 'SHA-256' },
+        true,
+        ['encrypt']
+      );
+
+      return cachedPublicKey;
+    }
+
+    async function generateAESKey() {
+      return await crypto.subtle.generateKey(
+        { name: 'AES-GCM', length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+      );
+    }
+
+    async function encryptWithAES(plainText, aesKey) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(plainText);
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encrypted = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv, tagLength: 128 },
+        aesKey,
+        data
+      );
+
+      return {
+        iv: arrayBufferToBase64(iv),
+        ciphertext: arrayBufferToBase64(encrypted)
+      };
+    }
+
+    async function encryptAESKeyWithRSA(aesKey, publicKey) {
+      const rawKey = await crypto.subtle.exportKey('raw', aesKey);
+      const encrypted = await crypto.subtle.encrypt(
+        { name: 'RSA-OAEP' },
+        publicKey,
+        rawKey
+      );
+      return arrayBufferToBase64(encrypted);
+    }
+
+    function formatDateTime(value = new Date()) {
+      return new Date(value).toLocaleString('ar-DZ');
+    }
+
+    function getCategoryLabel(category) {
+      return categoryTranslations[category] || category || '—';
+    }
+
+    function getStatusLabel(status) {
+      return statusTranslations[status] || status || 'قيد المراجعة';
+    }
+
+    function showMessage(message, type = 'success') {
+      const box = document.getElementById('responseBox');
+      const styles = type === 'success'
+        ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+        : 'border-red-200 bg-red-50 text-red-800';
+
+      box.innerHTML = `<div class="rounded-lg border p-4 text-sm font-semibold ${styles}">${message}</div>`;
+    }
+
+    function clearMessage() {
+      document.getElementById('responseBox').innerHTML = '';
+    }
+
+    function saveTicketToLocal(ticketId, category) {
+      let tickets = JSON.parse(localStorage.getItem('sanad_student_tickets')) || [];
+      tickets = tickets.filter(ticket => ticket.id !== ticketId);
+      tickets.unshift({
+        id: ticketId,
+        category,
+        date: new Date().toLocaleDateString('ar-DZ')
+      });
+      localStorage.setItem('sanad_student_tickets', JSON.stringify(tickets.slice(0, 10)));
+      loadSavedTicketsDropdown();
+    }
+
+    function loadSavedTicketsDropdown() {
+      const dropdown = document.getElementById('savedTicketsDropdown');
+      const tickets = JSON.parse(localStorage.getItem('sanad_student_tickets')) || [];
+
+      if (tickets.length === 0) {
+        dropdown.innerHTML = '<option value="">لا توجد تذاكر محفوظة سابقاً</option>';
+        return;
+      }
+
+      dropdown.innerHTML = '<option value="">اختر من تذاكرك السابقة</option>' +
+        tickets.map(ticket => `<option value="${ticket.id}">${ticket.category} - [${ticket.id}] (${ticket.date})</option>`).join('');
+    }
+
+    function openDepositModal(ticketId, categoryLabel, date) {
+      document.getElementById('receiptTicketId').textContent = ticketId;
+      document.getElementById('receiptDate').textContent = date;
+      document.getElementById('receiptCategory').textContent = categoryLabel;
+      document.getElementById('depositModal').classList.add('is-open');
+    }
+
+    function closeDepositModal() {
+      document.getElementById('depositModal').classList.remove('is-open');
+    }
+
+    function printDepositReceipt() {
+      document.body.classList.add('print-receipt-mode');
+
+      const cleanupPrintMode = () => {
+        document.body.classList.remove('print-receipt-mode');
+        window.removeEventListener('afterprint', cleanupPrintMode);
+      };
+
+      window.addEventListener('afterprint', cleanupPrintMode);
+      window.print();
+    }
+
+    function setStatusCard(data) {
+      const card = document.getElementById('statusResultCard');
+      const badge = document.getElementById('resStatusBadge');
+      const status = data.status || 'PENDING';
+
+      card.className = 'rounded-lg border p-4';
+      badge.className = 'rounded-full px-3 py-1 text-xs font-extrabold';
+
+      if (status === 'RESOLVED') {
+        card.classList.add('border-emerald-200', 'bg-emerald-50');
+        badge.classList.add('bg-emerald-100', 'text-emerald-800');
+      } else if (status === 'REJECTED') {
+        card.classList.add('border-red-200', 'bg-red-50');
+        badge.classList.add('bg-red-100', 'text-red-800');
+      } else {
+        card.classList.add('border-amber-200', 'bg-amber-50');
+        badge.classList.add('bg-amber-100', 'text-amber-800');
+      }
+
+      badge.textContent = getStatusLabel(status);
+      document.getElementById('resCategory').textContent = getCategoryLabel(data.category);
+      document.getElementById('resAdminNote').textContent = data.admin_note || 'لا توجد ملاحظات إضافية.';
+      document.getElementById('resTimestamp').textContent = data.timestamp ? formatDateTime(data.timestamp) : '';
+      card.classList.remove('hidden');
+    }
+
+    document.getElementById('category')?.addEventListener('change', function () {
+      document.getElementById('subCategoryGroup').classList.toggle('hidden', this.value !== 'DOC_REQUEST');
+    });
+
+    document.getElementById('savedTicketsDropdown')?.addEventListener('change', function (event) {
+      if (event.target.value) {
+        document.getElementById('ticketSearchId').value = event.target.value;
+      }
+    });
+
+    document.getElementById('closeDepositModal')?.addEventListener('click', closeDepositModal);
+    document.getElementById('printDepositReceipt')?.addEventListener('click', printDepositReceipt);
+
+    document.getElementById('depositModal')?.addEventListener('click', function (event) {
+      if (event.target === this) closeDepositModal();
+    });
+
+    document.getElementById('reportForm')?.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      clearMessage();
+
+      const category = document.getElementById('category').value;
+      const subCategory = document.getElementById('sub_category')?.value || '';
+      const moduleCode = document.getElementById('module_code').value.trim();
+      const room = document.getElementById('room').value.trim();
+      const details = document.getElementById('details').value.trim();
+      const email = document.getElementById('student_email').value.trim();
+      const attachmentInput = document.getElementById('attachment');
+
+      if (!category || !email) {
+        showMessage('يرجى ملء حقلي التصنيف والبريد المؤسساتي.', 'error');
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      const originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'جاري التشفير والإرسال...';
+
+      try {
+        // 1) تشفير البريد فقط
+        const publicKey = await fetchAdminPublicKey();
+        const aesKey = await generateAESKey();
+
+        const sensitiveData = {
+          email: email
+        };
+
+        const { iv, ciphertext } = await encryptWithAES(JSON.stringify(sensitiveData), aesKey);
+        const encryptedAesKey = await encryptAESKeyWithRSA(aesKey, publicKey);
+
+        // 2) إرسال بقية الحقول كنصوص عادية
+        const formData = new FormData();
+        formData.append('category', category);
+        formData.append('sub_category', subCategory);
+        formData.append('module_code', moduleCode);
+        formData.append('room', room);
+        formData.append('details', details);
+        formData.append('iv', iv);
+        formData.append('ciphertext', ciphertext);
+        formData.append('encrypted_aes_key', encryptedAesKey);
+
+        if (attachmentInput.files[0]) {
+          formData.append('attachment', attachmentInput.files[0]);
+        }
+
+        const response = await fetch(`${API_BASE}/api/reports`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'فشل إرسال الطلب');
+        }
+
+        const ticketId = result.ticket_id;
+        const categoryLabel = getCategoryLabel(category);
+        const receiptDate = formatDateTime();
+
+        saveTicketToLocal(ticketId, categoryLabel);
+        openDepositModal(ticketId, categoryLabel, receiptDate);
+        showMessage(`تم إرسال الطلب بنجاح. رقم التذكرة: <strong dir="ltr">${ticketId}</strong>`);
+
+        this.reset();
+        document.getElementById('subCategoryGroup').classList.add('hidden');
+      } catch (error) {
+        console.error(error);
+        showMessage(`حدث خطأ: ${error.message}`, 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+      }
+    });
+
+    document.getElementById('btnCheckStatus')?.addEventListener('click', async () => {
+      const ticketId = document.getElementById('ticketSearchId').value.trim();
+      clearMessage();
+
+      if (!ticketId) {
+        showMessage('يرجى إدخال رقم التذكرة.', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/api/reports/status/${encodeURIComponent(ticketId)}`);
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || data.error || 'التذكرة غير موجودة');
+        }
+
+        setStatusCard(data);
+      } catch (error) {
+        document.getElementById('statusResultCard').classList.add('hidden');
+        showMessage(error.message, 'error');
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadSavedTicketsDropdown();
+      fetchAdminPublicKey().catch(error => {
+        console.warn('تعذر تحميل المفتاح العام مسبقاً:', error.message);
+      });
+    });
+  </script>
+
+ <!-- التذييل الرسمي الأزرق الرصين -->
+  <footer class="mt-16 bg-primary-navy border-t-4 border-gold text-white relative z-10">
+    <div class="max-w-6xl mx-auto px-4 py-8 sm:px-6">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+        
+        <!-- الدعم التقني (أيقونات احترافية بدون نص) -->
+        <div class="flex flex-wrap items-center justify-center gap-3">
+          <span class="font-bold text-sm text-amber-200"> تواصل معنا :</span>
+          
+          <div class="flex items-center gap-2">
+            <!-- أيقونة واتساب -->
+            <a href="https://wa.me/213664003613" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               title="واتساب الدعم"
+               aria-label="واتساب الدعم"
+               class="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200">
+              <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+              </svg>
+            </a>
+
+            <!-- أيقونة البريد الإلكتروني (Gmail) -->
+            <a href="mailto:abdelmalek.belmihoub@univ-bba.dz?subject=الدعم%20التقني%20-%20منصة%20سند" 
+               title="البريد الإلكتروني"
+               aria-label="البريد الإلكتروني"
+               class="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-500 text-white shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200">
+              <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- الحقوق والبيانات -->
+        <div class="text-xs text-slate-300 font-semibold text-center md:text-left leading-5">
+          <p>جامعة محمد البشير الإبراهيمي - برج بوعريريج</p>
+          <p class="text-amber-200/80">كلية الآداب واللغات - قسم اللغة والأدب العربي © 2026</p>
+        </div>
+
+      </div>
+    </div>
+    
+    <!-- الشريط الزخرفي السفلي -->
+    <div class="h-1.5 w-full bg-accent-gold"></div>
+  </footer>
+
+</body>
+</html>
